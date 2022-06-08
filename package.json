@@ -1,0 +1,26 @@
+{
+  "name": "game_card",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/whereismysoft/game_card.git"
+  },
+  "keywords": [
+    "cards",
+    "game"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/whereismysoft/game_card/issues"
+  },
+  "homepage": "https://github.com/whereismysoft/game_card#readme",
+  "devDependencies": {
+    "typescript": "^4.7.3"
+  }
+}
