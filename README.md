@@ -7,3 +7,4 @@ cards
 - three js
 - add prettier / eslint
 - sockets
+- external service authorization (google, Vk and etc) 
