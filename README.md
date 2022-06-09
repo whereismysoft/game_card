@@ -5,3 +5,5 @@ cards
 - use typescript
 - find shuffle npm module
 - three js
+- add prettier / eslint
+- sockets
