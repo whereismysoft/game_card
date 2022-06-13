@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "static_folder=/client/dist port=8080 npx card-server"
   },
   "repository": {
     "type": "git",
@@ -26,5 +27,8 @@
   "workspaces": [
     "client",
     "server"
-  ]
+  ],
+  "dependencies": {
+    "socket.io": "^4.5.1"
+  }
 }
