@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 
+import 'module-alias/register';
+
 import express, { Express, Request, Response } from 'express';
 import http from 'http';
 import path from 'path';
 import { Server } from "socket.io";
+
+// import Cards from '#src/cards.json';
+import {getCards } from '@src/utils/generateCards';
+
+console.log('[Cards]', getCards());
 
 const app: Express = express();
 const port = process.env.port || 3000;
