@@ -8,6 +8,8 @@ import { Server } from "socket.io";
 // import Cards from '#src/cards.json';
 import { getCards } from '@src/utils/generateCards';
 
+console.log(getCards())
+
 const CARDS_ON_HAND_COUNT = 6;
 
 const app: Express = express();
