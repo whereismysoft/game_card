@@ -1,10 +1,5 @@
 import Cards from "@src/cards.json";
 
-type Card = {
-    suit: string,
-    card: string
-}
-
 const {suits, cards} = Cards as {suits: string[], cards: string[]};
 
 export function getCards(): Card[] {

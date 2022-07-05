@@ -8,7 +8,7 @@ import { Server } from "socket.io";
 // import Cards from '#src/cards.json';
 import { getCards } from '@src/utils/generateCards';
 
-console.log('[Cards]', getCards());
+const CARDS_ON_HAND_COUNT = 6;
 
 const app: Express = express();
 const port = process.env.port || 3000;
@@ -28,7 +28,7 @@ app.use(express.static(staticFolder))
 
 let cards;
 let machineCards
-let userCards: number[]
+let userCards: Card[]
 let bank
 
 
@@ -40,9 +40,9 @@ io.on('connection', (socket) => {
   console.log('a user connected');
   socket.emit("hi", 'hey from socket');
   socket.on("start", () => {
-    cards = Array.from(new Array(10), (_, i) => Math.floor(Math.random() * 10))
-    userCards = cards.slice(0, cards.length/2)
-    machineCards = cards.slice(cards.length/2)
+    cards = getCards();
+    userCards = cards.slice(0, CARDS_ON_HAND_COUNT)
+    machineCards = cards.slice(CARDS_ON_HAND_COUNT, CARDS_ON_HAND_COUNT * 2)
     
     console.log('[cards]', cards)
     console.log('[sent cards to user] ', userCards)
