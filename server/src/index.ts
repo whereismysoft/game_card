@@ -3,6 +3,7 @@
 import express, { Express, Request, Response } from 'express';
 import http from 'http';
 import path from 'path';
+import crypto from 'crypto';
 import { Server } from "socket.io";
 
 // import Cards from '#src/cards.json';
@@ -22,12 +23,15 @@ const io = new Server(server);
 const htmlFile = 'index.html';
 const htmlFileLocation = path.join(staticFolder, htmlFile)
 
+const randomId = () => crypto.randomBytes(8).toString("hex");
+
 // set cookie session with unique user id and nickname
 // set cookie expiration
 // realize socketss
 
 app.use(express.static(staticFolder))
 
+const awaiting_users: string[] = []
 let cards;
 let machineCards
 let userCards: Card[]
@@ -38,9 +42,35 @@ app.get('/', (req, res: Response) => {
   res.sendFile(htmlFileLocation);
 });
 
+// io.use(async (socket, next) => {
+//   // hack
+//   (socket as any)["userID"] = randomId() ;
+//   next();
+// });
+
 io.on('connection', (socket) => {
-  console.log('a user connected');
-  socket.emit("hi", 'hey from socket');
+  const userId = randomId()
+
+  socket.emit("session", {
+    userID: userId,
+  });
+
+  awaiting_users.push(userId)
+  console.log('[awaiting]', awaiting_users.length)
+
+  socket.on("user_disconnect", ({userID}) => {
+    console.log('[awaiting_users before]', awaiting_users)
+    const idx = awaiting_users.findIndex( id => id === userID)
+
+    awaiting_users.splice(idx, 1)
+
+    console.log('[awaiting_users after]', awaiting_users)
+  })
+
+  socket.onAny((event, ...args) => {
+    console.log('[socket]', event, args);
+  });
+
   socket.on("start", () => {
     cards = getCards();
     userCards = cards.slice(0, CARDS_ON_HAND_COUNT)
@@ -52,9 +82,9 @@ io.on('connection', (socket) => {
     socket.emit("get_cards", userCards)
   })
 
-  socket.on("card_move", ({cardValue}) => {
-    console.log('[card from user]', cardValue)
-    const index = userCards.findIndex( card => card === cardValue)
+  socket.on("card_move", ({card}) => {
+    console.log('[card from user]', card)
+    const index = userCards.findIndex( ({suit, number}) => number === card.number && suit === card.suit)
     userCards.splice(index, 1)
     console.log('[user cards after move]', userCards)
   })

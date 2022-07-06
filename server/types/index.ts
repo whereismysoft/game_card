@@ -1,4 +1,4 @@
 type Card = {
     suit: string,
-    card: string
+    number: string
 }
