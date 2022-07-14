@@ -12,6 +12,7 @@ import { getCards } from '@src/utils/generateCards';
 console.log(getCards())
 
 const CARDS_ON_HAND_COUNT = 6;
+const USERS_COUNT_IN_A_ROOM = 2;
 
 const app: Express = express();
 const port = process.env.port || 3000;
@@ -32,7 +33,9 @@ const randomId = () => crypto.randomBytes(8).toString("hex");
 app.use(express.static(staticFolder))
 
 const awaiting_users: string[] = []
-let cards;
+const game_rooms = new Map();
+
+let cards: Card[];
 let machineCards
 let userCards: Card[]
 let bank
@@ -48,6 +51,27 @@ app.get('/', (req, res: Response) => {
 //   next();
 // });
 
+// function runMatch(socket: any, users: string[]) {
+  function runMatch(roomId: string) {
+
+    console.log(io.sockets.in(roomId))
+  // cards = getCards();
+
+  // users.forEach( user => {
+  //   socket.to(user).emit('start', { users,  })
+  // })
+
+  // socket.on("run_game", () => {
+  //   userCards = cards.slice(0, CARDS_ON_HAND_COUNT)
+  //   machineCards = cards.slice(CARDS_ON_HAND_COUNT, CARDS_ON_HAND_COUNT * 2)
+    
+  //   console.log('[cards]', cards)
+  //   console.log('[sent cards to user] ', userCards)
+  //   console.log('[cards to machine] ', machineCards)
+  //   socket.emit("get_cards", userCards)
+  // })
+}
+
 io.on('connection', (socket) => {
   const userId = randomId()
 
@@ -55,40 +79,66 @@ io.on('connection', (socket) => {
     userID: userId,
   });
 
-  awaiting_users.push(userId)
-  console.log('[awaiting]', awaiting_users.length)
+  // create room
+  let roomId:string = String(game_rooms.size ? game_rooms.size - 1 : game_rooms.size);
+  const usersInRoom = game_rooms.get(roomId) || []
 
-  socket.on("user_disconnect", ({userID}) => {
-    console.log('[awaiting_users before]', awaiting_users)
-    const idx = awaiting_users.findIndex( id => id === userID)
+  if (usersInRoom.length < USERS_COUNT_IN_A_ROOM) {
+    roomId = String(game_rooms.size)
+    game_rooms.set(roomId, [userId])
+  }
+  
+  game_rooms.set(roomId, [userId, ...usersInRoom])
 
-    awaiting_users.splice(idx, 1)
+  socket.join(roomId);
+  socket.to(roomId).emit("user_connected");
 
-    console.log('[awaiting_users after]', awaiting_users)
-  })
+  if (game_rooms.get(roomId) === USERS_COUNT_IN_A_ROOM) {
+    io.to(roomId).emit("room_ready");
 
-  socket.onAny((event, ...args) => {
-    console.log('[socket]', event, args);
-  });
+    runMatch(roomId)
+  }
 
-  socket.on("start", () => {
-    cards = getCards();
-    userCards = cards.slice(0, CARDS_ON_HAND_COUNT)
-    machineCards = cards.slice(CARDS_ON_HAND_COUNT, CARDS_ON_HAND_COUNT * 2)
-    
-    console.log('[cards]', cards)
-    console.log('[sent cards to user] ', userCards)
-    console.log('[cards to machine] ', machineCards)
-    socket.emit("get_cards", userCards)
-  })
+  console.log('[io]', io)
+})
 
-  socket.on("card_move", ({card}) => {
-    console.log('[card from user]', card)
-    const index = userCards.findIndex( ({suit, number}) => number === card.number && suit === card.suit)
-    userCards.splice(index, 1)
-    console.log('[user cards after move]', userCards)
-  })
-});
+// io.on('connection', (socket) => {
+//   const userId = randomId()
+
+//   socket.emit("session", {
+//     userID: userId,
+//   });
+
+//   awaiting_users.push(userId)
+
+//   if (awaiting_users.length > 2) {
+//     const usersPair = awaiting_users.splice(0, 2)
+//     game_rooms.push([...usersPair])
+//     runMatch(socket, usersPair)
+//   }
+
+//   console.log('[awaiting]', awaiting_users.length)
+
+//   socket.on("user_disconnect", ({userID}) => {
+//     console.log('[awaiting_users before]', awaiting_users)
+//     const idx = awaiting_users.findIndex( id => id === userID)
+
+//     awaiting_users.splice(idx, 1)
+
+//     console.log('[awaiting_users after]', awaiting_users)
+//   })
+
+//   socket.onAny((event, ...args) => {
+//     console.log('[socket]', event, args);
+//   });
+
+//   socket.on("card_move", ({card}) => {
+//     console.log('[card from user]', card)
+//     const index = userCards.findIndex( ({suit, number}) => number === card.number && suit === card.suit)
+//     userCards.splice(index, 1)
+//     console.log('[user cards after move]', userCards)
+//   })
+// });
 
 // socket events
 // start game
