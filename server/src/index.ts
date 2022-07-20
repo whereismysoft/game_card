@@ -45,17 +45,25 @@ app.get('/', (req, res: Response) => {
   res.sendFile(htmlFileLocation);
 });
 
-// io.use(async (socket, next) => {
-//   // hack
-//   (socket as any)["userID"] = randomId() ;
-//   next();
-// });
+io.use(async (socket, next) => {
+  // hack
+  (socket as any)["userId"] = randomId() ;
+  next();
+});
 
 // function runMatch(socket: any, users: string[]) {
-  function runMatch(roomId: string) {
+function runMatch(roomId: string) {
+  console.log('[rn match roomId]', roomId)
 
-    console.log(io.sockets.in(roomId))
+  io.to(roomId).emit("room_ready");
+
   // cards = getCards();
+  console.log('[users]',)
+  const users =  io.sockets.adapter.rooms.get(roomId) || new Set()
+  for (const user of users) {
+
+    console.log('[cir]', (io.of("/").sockets.get(user) as any).userId)
+  }
 
   // users.forEach( user => {
   //   socket.to(user).emit('start', { users,  })
@@ -76,30 +84,25 @@ io.on('connection', (socket) => {
   const userId = randomId()
 
   socket.emit("session", {
-    userID: userId,
+    userID: (socket as any).userId,
   });
 
   // create room
   let roomId:string = String(game_rooms.size ? game_rooms.size - 1 : game_rooms.size);
   const usersInRoom = game_rooms.get(roomId) || []
 
-  if (usersInRoom.length < USERS_COUNT_IN_A_ROOM) {
+  if (usersInRoom.length >= USERS_COUNT_IN_A_ROOM) {
     roomId = String(game_rooms.size)
-    game_rooms.set(roomId, [userId])
   }
-  
-  game_rooms.set(roomId, [userId, ...usersInRoom])
+
+  game_rooms.set(roomId, [socket, ...usersInRoom])
 
   socket.join(roomId);
   socket.to(roomId).emit("user_connected");
 
-  if (game_rooms.get(roomId) === USERS_COUNT_IN_A_ROOM) {
-    io.to(roomId).emit("room_ready");
-
+  if (game_rooms.get(roomId).length === USERS_COUNT_IN_A_ROOM) {
     runMatch(roomId)
   }
-
-  console.log('[io]', io)
 })
 
 // io.on('connection', (socket) => {
