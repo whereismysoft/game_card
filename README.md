@@ -7,6 +7,7 @@ cards
 - three js
 - add prettier / eslint
 - sockets
+- joining room by roomid
 - external service authorization (google, Vk and etc) 
 - pre commit hook
 - tests
