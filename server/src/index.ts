@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 
 // import Cards from '#src/cards.json';
 import { getCards } from '@src/utils/generateCards';
+import { Socket } from 'dgram';
 
 console.log(getCards())
 
@@ -55,13 +56,12 @@ io.use(async (socket, next) => {
 function runMatch(roomId: string) {
   console.log('[rn match roomId]', roomId)
 
-  io.to(roomId).emit("room_ready");
-
   // cards = getCards();
-  console.log('[users]',)
+  io.to(roomId).emit("start", {roomId});
+  
   const users =  io.sockets.adapter.rooms.get(roomId) || new Set()
   for (const user of users) {
-
+    // const userSocket: Socket = io.of("/").sockets.get(user).userId
     console.log('[cir]', (io.of("/").sockets.get(user) as any).userId)
   }
 
@@ -95,14 +95,26 @@ io.on('connection', (socket) => {
     roomId = String(game_rooms.size)
   }
 
-  game_rooms.set(roomId, [socket, ...usersInRoom])
+  game_rooms.set(roomId, [{socket, isReady: false}, ...usersInRoom])
 
   socket.join(roomId);
   socket.to(roomId).emit("user_connected");
 
   if (game_rooms.get(roomId).length === USERS_COUNT_IN_A_ROOM) {
-    runMatch(roomId)
+    io.to(roomId).emit("room_ready", {roomId});
   }
+
+  socket.on("ready_to_play", ({user_id, room_id}) => {
+    game_rooms.set(roomId, [{socket, isReady: true}, ...usersInRoom])
+    const roomUsers = game_rooms.get(room_id)
+
+    const readyUsersCount:number = roomUsers.filter( ({isReady}: {isReady: boolean}) => isReady ).length
+
+    if (readyUsersCount === USERS_COUNT_IN_A_ROOM) {
+      runMatch(roomId)
+    }
+  })
+
 })
 
 // io.on('connection', (socket) => {
