@@ -2,15 +2,16 @@
 cards
 
 ## todo
+### features
+- joining room by roomid
+- external service authorization (google, Vk and etc)
+- create 3d interface (three js or smth like that)
+
+### development
 - use typescript
-- find shuffle npm module
-- three js
-- add prettier / eslint
-- sockets
-- external service authorization (google, Vk and etc) 
+- add prettier / eslint 
 - pre commit hook
 - tests
-- create 3d interface (three js or smth like that)
 
 ## game types
 - simple cards (durak, kozel, 21)
