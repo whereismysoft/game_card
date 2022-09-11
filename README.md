@@ -12,6 +12,7 @@ cards
 - add prettier / eslint 
 - pre commit hook
 - tests
+- try Qwik (https://qwik.builder.io/) 
 
 ## game types
 - simple cards (durak, kozel, 21)
