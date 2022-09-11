@@ -7,8 +7,8 @@ import crypto from 'crypto';
 import { Server } from "socket.io";
 
 // import Cards from '#src/cards.json';
+import Rooms from '@src/db/gameRooms';
 import { getCards } from '@src/utils/generateCards';
-import { Socket } from 'dgram';
 
 console.log(getCards())
 
@@ -34,7 +34,7 @@ const randomId = () => crypto.randomBytes(8).toString("hex");
 app.use(express.static(staticFolder))
 
 const awaiting_users: string[] = []
-const game_rooms = new Map();
+const game_rooms = new Rooms();
 
 let cards: Card[];
 let machineCards
@@ -48,7 +48,7 @@ app.get('/', (req, res: Response) => {
 
 io.use(async (socket, next) => {
   // hack
-  (socket as any)["userId"] = randomId() ;
+  (socket as any)["userID"] = randomId() ;
   next();
 });
 
@@ -59,7 +59,7 @@ function runMatch(roomId: string) {
   // cards = getCards();
   io.to(roomId).emit("start", {roomId});
   
-  const users =  io.sockets.adapter.rooms.get(roomId) || new Set()
+  const users = io.sockets.adapter.rooms.get(roomId) || new Set()
   for (const user of users) {
     // const userSocket: Socket = io.of("/").sockets.get(user).userId
     console.log('[cir]', (io.of("/").sockets.get(user) as any).userId)
@@ -81,37 +81,38 @@ function runMatch(roomId: string) {
 }
 
 io.on('connection', (socket) => {
-  const userId = randomId()
-
   socket.emit("session", {
-    userID: (socket as any).userId,
+    userID: (socket as any).userID,
   });
 
   // create room
-  let roomId:string = String(game_rooms.size ? game_rooms.size - 1 : game_rooms.size);
-  const usersInRoom = game_rooms.get(roomId) || []
-
-  if (usersInRoom.length >= USERS_COUNT_IN_A_ROOM) {
-    roomId = String(game_rooms.size)
-  }
-
-  game_rooms.set(roomId, [{socket, isReady: false}, ...usersInRoom])
+  let roomId:string = game_rooms.addToRoom(socket);
+  const usersInRoom = game_rooms.getRoomById(roomId) || []
 
   socket.join(roomId);
+  (socket as any)["roomID"] = roomId ;
   socket.to(roomId).emit("user_connected");
 
-  if (game_rooms.get(roomId).length === USERS_COUNT_IN_A_ROOM) {
+  if (usersInRoom.length === USERS_COUNT_IN_A_ROOM) {
     io.to(roomId).emit("room_ready", {roomId});
   }
 
-  socket.on("ready_to_play", ({user_id, room_id}) => {
-    game_rooms.set(roomId, [{socket, isReady: true}, ...usersInRoom])
-    const roomUsers = game_rooms.get(room_id)
+  socket.on("ready_to_play", () => {
+    const room_id =(socket as any).roomID;
+    const user_id = (socket as any).userID;
+    if (!room_id === undefined || user_id === undefined ) {
+      console.error('[Error] cannot set user ready to play without user_id or room_id')
 
-    const readyUsersCount:number = roomUsers.filter( ({isReady}: {isReady: boolean}) => isReady ).length
+      console.log('[user_id]', user_id)
+      console.log('[room_id]', room_id)
+      return
+    }
+    game_rooms.setUserReadyToPlay(socket, user_id, room_id)
+
+    const readyUsersCount:number = game_rooms.checkIsRoomReadyToPlay(room_id)
 
     if (readyUsersCount === USERS_COUNT_IN_A_ROOM) {
-      runMatch(roomId)
+      runMatch(room_id)
     }
   })
 
